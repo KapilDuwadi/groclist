@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#f7f6f2" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="GroceryList" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="manifest" href="./manifest.json" />
+  <title>GroceryList</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f6f2;
+      --surface: #ffffff;
+      --border: #e8e6e0;
+      --text: #1a1a18;
+      --text-mid: #6b6b67;
+      --text-light: #a8a8a3;
+      --accent: #3d7845;
+      --accent-light: #eaf3ec;
+      --accent-mid: #7aad82;
+      --danger: oklch(52% 0.18 25);
+      --radius: 14px;
+      --radius-sm: 8px;
+      --font: 'DM Sans', system-ui, sans-serif;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      font-family: var(--font);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+
+    #root {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 20px 12px;
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .app-header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+    .app-header h1 span { color: var(--accent); }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: var(--surface);
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      transition: background 0.15s, transform 0.1s;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .icon-btn:active { transform: scale(0.94); }
+    .icon-btn:hover { background: var(--border); }
+    .icon-btn svg { width: 18px; height: 18px; }
+
+    .list-name-row {
+      padding: 0 20px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .list-name-input {
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      flex: 1;
+      min-width: 0;
+    }
+    .list-meta { font-size: 12px; color: var(--text-light); white-space: nowrap; }
+
+    .store-tabs-wrap { padding: 0 20px 14px; overflow-x: auto; scrollbar-width: none; }
+    .store-tabs-wrap::-webkit-scrollbar { display: none; }
+    .store-tabs { display: flex; gap: 6px; width: max-content; }
+    .store-tab {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text-mid);
+      font-family: var(--font);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .store-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .store-tab:hover:not(.active) { border-color: var(--accent-mid); color: var(--accent); }
+
+    .divider { height: 1px; background: var(--border); margin: 0 20px; }
+
+    .items-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0 120px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .items-section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      padding: 14px 20px 6px;
+    }
+
+    .item-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: background 0.12s;
+      position: relative;
+    }
+    .item-row:active { background: var(--border); }
+
+    .item-check {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      margin-top: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.18s;
+      background: white;
+    }
+    .item-check.checked { background: var(--accent); border-color: var(--accent); }
+    .item-check svg { width: 12px; height: 12px; color: white; }
+
+    .item-content { flex: 1; min-width: 0; }
+    .item-name { font-size: 15px; font-weight: 400; color: var(--text); transition: color 0.18s; text-wrap: pretty; }
+    .item-name.checked { text-decoration: line-through; color: var(--text-light); }
+    .item-sub { display: flex; gap: 8px; margin-top: 2px; flex-wrap: wrap; }
+    .item-qty { font-size: 12px; color: var(--accent); font-weight: 500; }
+    .item-note { font-size: 12px; color: var(--text-mid); font-style: italic; }
+    .item-store-tag {
+      font-size: 11px;
+      padding: 1px 7px;
+      border-radius: 10px;
+      background: var(--accent-light);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .item-delete-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.15s, color 0.15s;
+    }
+    .item-row:hover .item-delete-btn { opacity: 1; }
+    .item-delete-btn:hover { color: var(--danger); }
+    .item-delete-btn svg { width: 15px; height: 15px; }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      gap: 12px;
+      color: var(--text-light);
+      text-align: center;
+    }
+    .empty-state svg { width: 48px; height: 48px; opacity: 0.35; }
+    .empty-state p { font-size: 15px; }
+    .empty-state small { font-size: 13px; }
+
+    .add-bar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      padding: 12px 20px calc(12px + var(--safe-bottom));
+      background: rgba(247, 246, 242, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      z-index: 30;
+    }
+    .add-bar-inner { display: flex; gap: 8px; align-items: flex-end; }
+    .add-main-input {
+      flex: 1;
+      font-family: var(--font);
+      font-size: 15px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      outline: none;
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+    .add-main-input:focus { border-color: var(--accent); }
+    .add-main-input::placeholder { color: var(--text-light); }
+
+    .add-send-btn {
+      width: 42px;
+      height: 42px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      border-radius: var(--radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.1s, opacity 0.15s;
+    }
+    .add-send-btn:active { transform: scale(0.93); }
+    .add-send-btn:disabled { opacity: 0.4; cursor: default; }
+    .add-send-btn svg { width: 20px; height: 20px; }
+
+    .add-expand { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .add-mini-input {
+      font-family: var(--font);
+      font-size: 13px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      outline: none;
+      color: var(--text);
+      transition: border-color 0.15s;
+      flex: 1;
+      min-width: 80px;
+    }
+    .add-mini-input:focus { border-color: var(--accent); }
+    .add-mini-input::placeholder { color: var(--text-light); }
+    .store-select {
+      font-family: var(--font);
+      font-size: 13px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      outline: none;
+      color: var(--text);
+      cursor: pointer;
+      flex: 1;
+      min-width: 100px;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a8a8a3' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+    }
+    .store-select:focus { border-color: var(--accent); }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26,26,24,0.45);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 50;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      animation: fadeIn 0.18s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal-sheet {
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      padding: 0 0 calc(24px + var(--safe-bottom));
+      width: 100%;
+      max-width: 480px;
+      animation: slideUp 0.22s cubic-bezier(.32,1,.52,1);
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 14px auto 20px; }
+    .modal-title { font-size: 16px; font-weight: 600; padding: 0 20px 16px; border-bottom: 1px solid var(--border); }
+    .modal-body { padding: 20px 20px 0; display: flex; flex-direction: column; gap: 12px; }
+    .modal-label { font-size: 12px; font-weight: 500; color: var(--text-mid); margin-bottom: 4px; }
+    .modal-input {
+      font-family: var(--font);
+      font-size: 15px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      outline: none;
+      color: var(--text);
+      width: 100%;
+      transition: border-color 0.15s;
+    }
+    .modal-input:focus { border-color: var(--accent); }
+    .modal-row { display: flex; gap: 10px; }
+    .modal-row > div { flex: 1; }
+    .modal-actions { display: flex; gap: 10px; padding: 20px 20px 0; }
+
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.15s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); }
+    .btn-danger { background: oklch(96% 0.04 25); color: var(--danger); border: 1.5px solid oklch(88% 0.06 25); }
+
+    .archive-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      cursor: pointer;
+      color: var(--text-mid);
+      font-size: 13px;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      font-family: var(--font);
+      width: 100%;
+      text-align: left;
+      border-top: 1px solid var(--border);
+    }
+    .archive-toggle svg { width: 14px; height: 14px; transition: transform 0.2s; }
+    .archive-toggle.open svg { transform: rotate(90deg); }
+
+    .archive-list { padding: 0 0 8px; }
+    .archive-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: background 0.12s;
+    }
+    .archive-item:hover { background: var(--accent-light); }
+    .archive-item-name { font-size: 14px; color: var(--text); }
+    .archive-item-meta { font-size: 12px; color: var(--text-light); }
+    .archive-item-actions { display: flex; gap: 4px; }
+
+    .lists-panel { padding: 0 20px; }
+    .lists-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .lists-item:last-child { border-bottom: none; }
+    .lists-item-info { flex: 1; min-width: 0; }
+    .lists-item-name { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lists-item-name.active-list { color: var(--accent); }
+    .lists-item-meta { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+    .lists-item-actions { display: flex; gap: 4px; }
+
+    .mic-fab {
+      position: fixed;
+      bottom: calc(80px + var(--safe-bottom));
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 25;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      transition: all 0.15s;
+    }
+    .mic-fab.listening { background: var(--danger); border-color: var(--danger); animation: pulse 1s ease-in-out infinite; }
+    .mic-fab svg { width: 18px; height: 18px; }
+    .mic-fab:not(.listening) svg { color: var(--text-mid); }
+    .mic-fab.listening svg { color: white; }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0.1); }
+      50% { box-shadow: 0 0 0 8px oklch(52% 0.18 25 / 0.2); }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: calc(78px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
+      background: var(--text);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 60;
+      animation: toastIn 0.22s cubic-bezier(.32,1,.52,1), toastOut 0.22s 2.3s ease forwards;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+    @keyframes toastOut { to { opacity: 0; transform: translateX(-50%) translateY(-6px); } }
+
+    .progress-bar { height: 3px; background: var(--border); margin: 0 20px 14px; border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s cubic-bezier(.25,1,.5,1); }
+
+    .clear-checked-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 500;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text-mid);
+      cursor: pointer;
+      transition: all 0.15s;
+      margin: 0 20px 4px;
+    }
+    .clear-checked-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* Settings panel controls */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+    }
+    .setting-label { font-size: 14px; color: var(--text); }
+    .setting-sublabel { font-size: 12px; color: var(--text-mid); margin-top: 2px; }
+    .toggle-btn {
+      width: 44px;
+      height: 26px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle-btn .knob {
+      position: absolute;
+      top: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: white;
+      transition: left 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .range-row { display: flex; flex-direction: column; gap: 6px; }
+    .range-row-header { display: flex; justify-content: space-between; font-size: 13px; }
+    .range-row input[type=range] { width: 100%; accent-color: var(--accent); }
+    .color-swatch {
+      width: 56px;
+      height: 32px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 2px;
+      background: none;
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, createContext, useContext } = React;
+
+/* ── Constants ─────────────────────────────────── */
+const STORES = ['All', 'Costco', 'Kroger', 'Walmart', 'Hamro Mart', 'India Bazar', 'Sprouts'];
+
+const DEFAULT_TWEAKS = {
+  accentColor: '#3d7845',
+  fontSize: 15,
+  showStoreTags: true,
+};
+
+/* ── Storage ─────────────────────────────────────── */
+const LS = {
+  get: (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+
+const newList = (name = '') => ({
+  id: uid(),
+  name: name || `List ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+  createdAt: Date.now(),
+  items: [],
+});
+
+/* ── Tweaks context ──────────────────────────────── */
+const TweaksCtx = createContext(null);
+
+function useTweaks(defaults) {
+  const [values, setValues] = useState(() => {
+    const saved = LS.get('gl_tweaks', {});
+    return { ...defaults, ...saved };
+  });
+  const setTweak = useCallback((key, val) => {
+    setValues(prev => {
+      const next = { ...prev, [key]: val };
+      LS.set('gl_tweaks', next);
+      return next;
+    });
+  }, []);
+  return [values, setTweak];
+}
+
+/* ── Icons ───────────────────────────────────────── */
+const Icon = ({ d, size = 20, strokeWidth = 1.7, fill = 'none' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+    {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
+  </svg>
+);
+
+const Icons = {
+  check: 'M20 6 9 17l-5-5',
+  plus: 'M12 5v14M5 12h14',
+  trash: ['M3 6h18', 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6', 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'],
+  chevronRight: 'M9 18l6-6-6-6',
+  list: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'],
+  mic: ['M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z', 'M19 10v2a7 7 0 0 1-14 0v-2', 'M12 19v4', 'M8 23h8'],
+  xmark: 'M18 6 6 18M6 6l12 12',
+  cart: ['M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', 'M3 6h18', 'M16 10a4 4 0 0 1-8 0'],
+  settings: ['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'],
+};
+
+/* ── Toast ───────────────────────────────────────── */
+function Toast({ msg }) {
+  return <div className="toast">{msg}</div>;
+}
+
+/* ── Item Row ─────────────────────────────────────── */
+function ItemRow({ item, onCheck, onDelete, onEdit, showStoreTags, fontSize }) {
+  return (
+    <div className="item-row" onClick={() => onEdit(item)}>
+      <button
+        className={`item-check${item.checked ? ' checked' : ''}`}
+        onClick={e => { e.stopPropagation(); onCheck(item.id); }}
+      >
+        {item.checked && <Icon d={Icons.check} size={12} strokeWidth={2.5} />}
+      </button>
+      <div className="item-content">
+        <div style={{ fontSize }} className={`item-name${item.checked ? ' checked' : ''}`}>
+          {item.name}
+        </div>
+        {(item.qty || item.note || (showStoreTags && item.store && item.store !== 'All')) && (
+          <div className="item-sub">
+            {item.qty && <span className="item-qty">× {item.qty}</span>}
+            {item.note && <span className="item-note">{item.note}</span>}
+            {showStoreTags && item.store && item.store !== 'All' && (
+              <span className="item-store-tag">{item.store}</span>
+            )}
+          </div>
+        )}
+      </div>
+      <button className="item-delete-btn" onClick={e => { e.stopPropagation(); onDelete(item.id); }}>
+        <Icon d={Icons.xmark} size={15} strokeWidth={2} />
+      </button>
+    </div>
+  );
+}
+
+/* ── Item Edit Modal ──────────────────────────────── */
+function ItemModal({ item, onSave, onDelete, onClose }) {
+  const [name, setName] = useState(item?.name || '');
+  const [qty, setQty] = useState(item?.qty || '');
+  const [note, setNote] = useState(item?.note || '');
+  const [store, setStore] = useState(item?.store || 'All');
+  const nameRef = useRef();
+
+  useEffect(() => { setTimeout(() => nameRef.current?.focus(), 100); }, []);
+
+  const save = () => {
+    if (!name.trim()) return;
+    onSave({ ...item, name: name.trim(), qty: qty.trim(), note: note.trim(), store });
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+        <div className="modal-handle"></div>
+        <div className="modal-title">{item?.id ? 'Edit item' : 'Add item'}</div>
+        <div className="modal-body">
+          <div>
+            <div className="modal-label">Item name</div>
+            <input ref={nameRef} className="modal-input" value={name}
+              onChange={e => setName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') save(); }}
+              placeholder="e.g. Whole milk" />
+          </div>
+          <div className="modal-row">
+            <div>
+              <div className="modal-label">Quantity</div>
+              <input className="modal-input" value={qty}
+                onChange={e => setQty(e.target.value)} placeholder="e.g. 2 gallons" />
+            </div>
+            <div>
+              <div className="modal-label">Store</div>
+              <select className="modal-input store-select" value={store} onChange={e => setStore(e.target.value)}>
+                {STORES.map(s => <option key={s} value={s}>{s === 'All' ? 'Any store' : s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <div className="modal-label">Note</div>
+            <input className="modal-input" value={note}
+              onChange={e => setNote(e.target.value)} placeholder="e.g. organic, low-fat…" />
+          </div>
+        </div>
+        <div className="modal-actions">
+          {item?.id && <button className="btn btn-danger" onClick={() => onDelete(item.id)}>Delete</button>}
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={save} disabled={!name.trim()}>
+            {item?.id ? 'Save' : 'Add'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Lists Modal ─────────────────────────────────── */
+function ListsModal({ lists, activeId, onSwitch, onCreate, onDelete, onClose }) {
+  const [newName, setNewName] = useState('');
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+        <div className="modal-handle"></div>
+        <div className="modal-title">Your lists</div>
+        <div className="modal-body" style={{ maxHeight: 320, overflowY: 'auto' }}>
+          {lists.map(l => (
+            <div key={l.id} className="lists-item" onClick={() => { onSwitch(l.id); onClose(); }}>
+              <div className="lists-item-info">
+                <div className={`lists-item-name${l.id === activeId ? ' active-list' : ''}`}>{l.name}</div>
+                <div className="lists-item-meta">
+                  {l.items.length} item{l.items.length !== 1 ? 's' : ''} · {new Date(l.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </div>
+              </div>
+              {l.id === activeId
+                ? <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}>Active</span>
+                : <button className="icon-btn" style={{ width: 30, height: 30 }} onClick={e => { e.stopPropagation(); onDelete(l.id); }}>
+                    <Icon d={Icons.xmark} size={13} strokeWidth={2} />
+                  </button>
+              }
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: '16px 20px 0', display: 'flex', gap: 8 }}>
+          <input className="modal-input" style={{ flex: 1 }} value={newName}
+            onChange={e => setNewName(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && newName.trim()) { onCreate(newName.trim()); setNewName(''); } }}
+            placeholder="New list name…" />
+          <button className="btn btn-primary" style={{ flex: '0 0 auto', padding: '10px 16px' }}
+            onClick={() => { if (newName.trim()) { onCreate(newName.trim()); setNewName(''); } }}>
+            Create
+          </button>
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-secondary" onClick={onClose}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Settings Modal ───────────────────────────────── */
+function SettingsModal({ tweaks, setTweak, onClose }) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+        <div className="modal-handle"></div>
+        <div className="modal-title">Settings</div>
+        <div className="modal-body">
+          <div className="setting-row">
+            <div>
+              <div className="setting-label">Accent color</div>
+            </div>
+            <input type="color" className="color-swatch" value={tweaks.accentColor}
+              onChange={e => setTweak('accentColor', e.target.value)} />
+          </div>
+          <div className="range-row">
+            <div className="range-row-header">
+              <span style={{ fontSize: 14 }}>Font size</span>
+              <span style={{ color: 'var(--text-mid)' }}>{tweaks.fontSize}px</span>
+            </div>
+            <input type="range" min={13} max={19} step={1} value={tweaks.fontSize}
+              onChange={e => setTweak('fontSize', Number(e.target.value))} />
+          </div>
+          <div className="setting-row">
+            <span className="setting-label">Show store tags</span>
+            <button
+              className="toggle-btn"
+              style={{ background: tweaks.showStoreTags ? 'var(--accent)' : 'var(--border)' }}
+              onClick={() => setTweak('showStoreTags', !tweaks.showStoreTags)}
+            >
+              <span className="knob" style={{ left: tweaks.showStoreTags ? 21 : 3 }} />
+            </button>
+          </div>
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-secondary" onClick={onClose}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main App ─────────────────────────────────────── */
+function App() {
+  const [tweaks, setTweak] = useTweaks(DEFAULT_TWEAKS);
+
+  const [lists, setLists] = useState(() => {
+    const saved = LS.get('gl_lists', null);
+    return saved && saved.length ? saved : [newList('Weekly Shop')];
+  });
+  const [activeId, setActiveId] = useState(() => LS.get('gl_activeId', null) || lists[0]?.id);
+  const [storeFilter, setStoreFilter] = useState('All');
+  const [showLists, setShowLists] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [showArchive, setShowArchive] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [toastKey, setToastKey] = useState(0);
+  const [listening, setListening] = useState(false);
+
+  const [addText, setAddText] = useState('');
+  const [addQty, setAddQty] = useState('');
+  const [addNote, setAddNote] = useState('');
+  const [addStore, setAddStore] = useState('All');
+  const [addExpanded, setAddExpanded] = useState(false);
+  const addRef = useRef();
+
+  const activeList = lists.find(l => l.id === activeId) || lists[0];
+  const archivedLists = lists.filter(l => l.id !== activeId);
+
+  useEffect(() => { LS.set('gl_lists', lists); }, [lists]);
+  useEffect(() => { LS.set('gl_activeId', activeId); }, [activeId]);
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent', tweaks.accentColor);
+    // Update accent-light and accent-mid based on color (keep defaults)
+  }, [tweaks.accentColor]);
+
+  const showToast = msg => {
+    setToast(msg);
+    setToastKey(k => k + 1);
+    setTimeout(() => setToast(null), 2600);
+  };
+
+  const updateList = useCallback((id, fn) => {
+    setLists(ls => ls.map(l => l.id === id ? { ...l, ...fn(l) } : l));
+  }, []);
+
+  const filteredItems = activeList ? activeList.items.filter(i =>
+    storeFilter === 'All' || i.store === storeFilter || !i.store || i.store === 'All'
+  ) : [];
+  const unchecked = filteredItems.filter(i => !i.checked);
+  const checked = filteredItems.filter(i => i.checked);
+  const progress = activeList?.items.length
+    ? Math.round((activeList.items.filter(i => i.checked).length / activeList.items.length) * 100) : 0;
+
+  const addItem = useCallback(data => {
+    if (!data.name) return;
+    const item = { id: uid(), name: data.name, qty: data.qty || '', note: data.note || '', store: data.store || 'All', checked: false, addedAt: Date.now() };
+    updateList(activeId, l => ({ items: [item, ...l.items] }));
+    showToast(`Added "${data.name}"`);
+  }, [activeId, updateList]);
+
+  const handleQuickAdd = () => {
+    if (!addText.trim()) return;
+    addItem({ name: addText.trim(), qty: addQty, note: addNote, store: addStore });
+    setAddText(''); setAddQty(''); setAddNote(''); setAddStore('All');
+    setAddExpanded(false);
+    addRef.current?.focus();
+  };
+
+  const checkItem = useCallback(itemId => {
+    updateList(activeId, l => ({ items: l.items.map(i => i.id === itemId ? { ...i, checked: !i.checked } : i) }));
+  }, [activeId, updateList]);
+
+  const deleteItem = useCallback(itemId => {
+    updateList(activeId, l => ({ items: l.items.filter(i => i.id !== itemId) }));
+    setEditItem(null);
+    showToast('Item removed');
+  }, [activeId, updateList]);
+
+  const saveEditItem = useCallback(updatedItem => {
+    if (updatedItem.id && activeList.items.find(i => i.id === updatedItem.id)) {
+      updateList(activeId, l => ({ items: l.items.map(i => i.id === updatedItem.id ? updatedItem : i) }));
+    } else {
+      addItem(updatedItem);
+    }
+    setEditItem(null);
+  }, [activeId, activeList, updateList, addItem]);
+
+  const clearChecked = () => {
+    updateList(activeId, l => ({ items: l.items.filter(i => !i.checked) }));
+    showToast('Cleared checked items');
+  };
+
+  const createList = name => {
+    const l = newList(name);
+    setLists(ls => [l, ...ls]);
+    setActiveId(l.id);
+    showToast(`"${l.name}" created`);
+  };
+  const deleteList = id => {
+    if (lists.length === 1) { showToast("Can't delete only list"); return; }
+    setLists(ls => ls.filter(l => l.id !== id));
+    if (activeId === id) setActiveId(lists.find(l => l.id !== id)?.id);
+  };
+
+  const startVoice = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { showToast('Voice not supported'); return; }
+    const r = new SR();
+    r.lang = 'en-US';
+    r.onstart = () => setListening(true);
+    r.onend = () => setListening(false);
+    r.onresult = e => {
+      const text = e.results[0][0].transcript;
+      setAddText(t => t ? t + ', ' + text : text);
+      setAddExpanded(true);
+    };
+    r.onerror = () => { setListening(false); showToast('Voice error, try again'); };
+    r.start();
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Header */}
+      <div className="app-header">
+        <h1>Grocery<span>List</span></h1>
+        <div className="header-actions">
+          <button className="icon-btn" title="Manage lists" onClick={() => setShowLists(true)}>
+            <Icon d={Icons.list} size={18} />
+          </button>
+          <button className="icon-btn" title="New list" onClick={() => createList('')}>
+            <Icon d={Icons.plus} size={18} />
+          </button>
+          <button className="icon-btn" title="Settings" onClick={() => setShowSettings(true)}>
+            <Icon d={Icons.settings} size={18} />
+          </button>
+        </div>
+      </div>
+
+      {/* List name */}
+      <div className="list-name-row">
+        <input
+          className="list-name-input"
+          value={activeList?.name || ''}
+          onChange={e => updateList(activeId, () => ({ name: e.target.value }))}
+          placeholder="List name"
+        />
+        <span className="list-meta">{activeList?.items.filter(i => !i.checked).length || 0} left</span>
+      </div>
+
+      {/* Progress */}
+      {activeList?.items.length > 0 && (
+        <div className="progress-bar">
+          <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+        </div>
+      )}
+
+      {/* Store filter tabs */}
+      <div className="store-tabs-wrap">
+        <div className="store-tabs">
+          {STORES.map(s => (
+            <button key={s} className={`store-tab${storeFilter === s ? ' active' : ''}`} onClick={() => setStoreFilter(s)}>
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="divider"></div>
+
+      {/* Items */}
+      <div className="items-scroll">
+        {unchecked.length === 0 && checked.length === 0 && (
+          <div className="empty-state">
+            <Icon d={Icons.cart} size={48} strokeWidth={1.3} />
+            <p>Your list is empty</p>
+            <small>Type below to add your first item</small>
+          </div>
+        )}
+
+        {unchecked.map(item => (
+          <ItemRow key={item.id} item={item} onCheck={checkItem} onDelete={deleteItem}
+            onEdit={setEditItem} showStoreTags={tweaks.showStoreTags} fontSize={tweaks.fontSize} />
+        ))}
+
+        {checked.length > 0 && (
+          <>
+            <div className="items-section-label">In cart ({checked.length})</div>
+            {checked.map(item => (
+              <ItemRow key={item.id} item={item} onCheck={checkItem} onDelete={deleteItem}
+                onEdit={setEditItem} showStoreTags={tweaks.showStoreTags} fontSize={tweaks.fontSize} />
+            ))}
+            <button className="clear-checked-btn" onClick={clearChecked}>
+              <Icon d={Icons.trash} size={13} strokeWidth={2} />
+              Clear checked
+            </button>
+          </>
+        )}
+
+        {/* Archive */}
+        {archivedLists.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <button className={`archive-toggle${showArchive ? ' open' : ''}`} onClick={() => setShowArchive(s => !s)}>
+              <Icon d={Icons.chevronRight} size={14} strokeWidth={2} />
+              Archived lists ({archivedLists.length})
+            </button>
+            {showArchive && (
+              <div className="archive-list">
+                {archivedLists.map(l => (
+                  <div key={l.id} className="archive-item">
+                    <div onClick={() => { setActiveId(l.id); showToast(`Switched to "${l.name}"`); }}>
+                      <div className="archive-item-name">{l.name}</div>
+                      <div className="archive-item-meta">
+                        {l.items.length} item{l.items.length !== 1 ? 's' : ''} · {new Date(l.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </div>
+                    </div>
+                    <div className="archive-item-actions">
+                      <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => deleteList(l.id)}>
+                        <Icon d={Icons.trash} size={13} strokeWidth={2} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Voice FAB */}
+      <button className={`mic-fab${listening ? ' listening' : ''}`} onClick={startVoice} title="Voice input">
+        <Icon d={Icons.mic} size={18} strokeWidth={1.8} />
+      </button>
+
+      {/* Add bar */}
+      <div className="add-bar">
+        {addExpanded && (
+          <div className="add-expand">
+            <input className="add-mini-input" value={addQty} onChange={e => setAddQty(e.target.value)} placeholder="Qty (e.g. 2 lbs)" />
+            <input className="add-mini-input" value={addNote} onChange={e => setAddNote(e.target.value)} placeholder="Note (organic…)" />
+            <select className="store-select" value={addStore} onChange={e => setAddStore(e.target.value)}>
+              {STORES.map(s => <option key={s} value={s}>{s === 'All' ? 'Any store' : s}</option>)}
+            </select>
+          </div>
+        )}
+        <div className="add-bar-inner">
+          <input
+            ref={addRef}
+            className="add-main-input"
+            value={addText}
+            onChange={e => setAddText(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleQuickAdd(); }}
+            onFocus={() => setAddExpanded(true)}
+            placeholder="Add an item…"
+          />
+          <button className="add-send-btn" onClick={handleQuickAdd} disabled={!addText.trim()}>
+            <Icon d={Icons.plus} size={20} strokeWidth={2.2} />
+          </button>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {editItem !== null && (
+        <ItemModal item={editItem} onSave={saveEditItem} onDelete={deleteItem} onClose={() => setEditItem(null)} />
+      )}
+      {showLists && (
+        <ListsModal lists={lists} activeId={activeId} onSwitch={setActiveId}
+          onCreate={createList} onDelete={deleteList} onClose={() => setShowLists(false)} />
+      )}
+      {showSettings && (
+        <SettingsModal tweaks={tweaks} setTweak={setTweak} onClose={() => setShowSettings(false)} />
+      )}
+
+      {toast && <Toast msg={toast} key={toastKey} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
