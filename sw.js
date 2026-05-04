@@ -1,4 +1,4 @@
-const CACHE = 'grocerylist-v2';
+const CACHE = 'grocerylist-v3';
 const PRECACHE = [
   './',
   './index.html',
@@ -13,8 +13,15 @@ const PRECACHE = [
 ];
 
 self.addEventListener('install', e => {
+  // Cache each asset individually so one slow CDN fetch never blocks install
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(PRECACHE)).catch(() => {})
+    caches.open(CACHE).then(cache =>
+      Promise.all(
+        PRECACHE.map(url =>
+          cache.add(url).catch(() => {})
+        )
+      )
+    )
   );
   self.skipWaiting();
 });
